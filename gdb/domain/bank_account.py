@@ -30,10 +30,12 @@ class BankAccount(ABC):
     # TODO (Step 1): Turn the two methods below into abstract contracts by decorating each one with
     #   @abstractmethod (the body can then simply be `pass`). Afterwards BankAccount itself can no longer
     #   be instantiated, and every subclass is forced to override both methods.
+    @abstractmethod
     def calculate_interest(self) -> float:
         """Abstract method enforced on all subclasses."""
         raise NotImplementedError("TODO: declare calculate_interest() as an @abstractmethod")
 
+    @abstractmethod
     def get_account_type(self) -> str:
         """Abstract method returning product type string."""
         raise NotImplementedError("TODO: declare get_account_type() as an @abstractmethod")

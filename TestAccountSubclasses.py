@@ -1,5 +1,5 @@
-from SavingsAccount import SavingsAccount
-from CurrentAccount import CurrentAccount
+from gdb.domain.savings_account import SavingsAccount
+from gdb.domain.current_account import CurrentAccount
 
 
 def displayAccount(account):
