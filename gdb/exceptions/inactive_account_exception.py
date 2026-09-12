@@ -1,4 +1,4 @@
-from AccountException import AccountException
+from gdb.exceptions.account_exception import AccountException
 
 
 class InactiveAccountException(AccountException):

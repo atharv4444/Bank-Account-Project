@@ -1,42 +1,28 @@
-from AccountExceptions import Account
+# gdb/domain/savings_account.py
+from gdb.domain.bank_account import BankAccount
+from gdb.exceptions import (
+    InactiveAccountException,
+    InvalidAmountException,
+    MinimumBalanceViolationException
+)
 
+class SavingsAccount(BankAccount):
+    def __init__(self, account_number: str, name: str, age: int, balance: float, status: str = "Active", pin: str = "0000", interest_rate: float = 4.0, minimum_balance: float = 1000.0) -> None:
+        super().__init__(account_number, name, age, balance, status, pin)
+        self._interest_rate = interest_rate
+        self._minimum_balance = minimum_balance
 
-class SavingsAccount(Account):
+    def calculate_interest(self) -> float:
+        return (self._balance * self._interest_rate) / 100.0
 
-    MINIMUM_BALANCE = 500.0
-    ACCOUNT_TYPE = "Savings"
-    INTEREST_RATE = 4.0
+    def get_account_type(self) -> str:
+        return "Savings"
 
-    def __init__(self, accountNumber, name, age, initialBalance):
-
-        super().__init__(
-            accountNumber,
-            name,
-            age,
-            initialBalance
-        )
-
-    def getMinimumBalance(self):
-
-        return self.MINIMUM_BALANCE
-
-    def getAccountType(self):
-
-        return self.ACCOUNT_TYPE
-
-    def calculateInterest(self, years):
-
-        if years < 0:
-            raise ValueError(
-                "Years must be non-negative"
-            )
-
-        return (
-            self.getBalance()
-            * (self.INTEREST_RATE / 100)
-            * years
-        )
-
-    def getInterestRate(self):
-
-        return self.INTEREST_RATE
+    def withdraw(self, amount: float) -> None:
+        if self._status.lower() != "active":
+            raise InactiveAccountException(f"Cannot withdraw from inactive account: {self._account_number}")
+        if amount <= 0:
+            raise InvalidAmountException(f"Withdrawal amount must be strictly positive: {amount}")
+        if (self._balance - amount) < self._minimum_balance:
+            raise MinimumBalanceViolationException(f"Withdrawal would violate minimum balance requirement of Rs {self._minimum_balance}")
+        super().withdraw(amount)

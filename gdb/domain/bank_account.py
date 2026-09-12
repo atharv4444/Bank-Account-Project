@@ -1,192 +1,78 @@
+# gdb/domain/bank_account.py
 from abc import ABC, abstractmethod
+from gdb.exceptions import (
+    AccountException,
+    InvalidAmountException,
+    InsufficientBalanceException,
+    InactiveAccountException,
+    InvalidPinException
+)
 
-from InvalidAmountException import InvalidAmountException
-from InsufficientBalanceException import InsufficientBalanceException
-from MinimumBalanceViolationException import MinimumBalanceViolationException
-from InactiveAccountException import InactiveAccountException
-from InvalidPinException import InvalidPinException
+class BankAccount(ABC):
+    """Abstract Base Class modeling generic Bank Account."""
+    def __init__(self, account_number: str, name: str, age: int, balance: float, status: str = "Active", pin: str = "0000") -> None:
+        if not account_number or not account_number.strip():
+            raise AccountException("Account number cannot be empty")
+        if age < 18:
+            raise AccountException("Account holder must be at least 18 years old")
+        if balance < 0:
+            raise InvalidAmountException("Initial balance cannot be negative")
+        if not pin or len(pin) != 4 or not pin.isdigit():
+            raise InvalidPinException("PIN must be exactly 4 digits")
 
+        self._account_number: str = account_number
+        self._name: str = name
+        self._age: int = age
+        self._balance: float = balance
+        self._status: str = status
+        self._pin: str = pin
 
-class Account(ABC):
+    # TODO (Step 1): Turn the two methods below into abstract contracts by decorating each one with
+    #   @abstractmethod (the body can then simply be `pass`). Afterwards BankAccount itself can no longer
+    #   be instantiated, and every subclass is forced to override both methods.
+    def calculate_interest(self) -> float:
+        """Abstract method enforced on all subclasses."""
+        raise NotImplementedError("TODO: declare calculate_interest() as an @abstractmethod")
 
-    # ===== Constants =====
+    def get_account_type(self) -> str:
+        """Abstract method returning product type string."""
+        raise NotImplementedError("TODO: declare get_account_type() as an @abstractmethod")
 
-    MIN_AGE = 18
-    MIN_PIN = 1000
-    MAX_PIN = 9999
-
-    # ===== Abstract Methods =====
-
-    @abstractmethod
-    def getMinimumBalance(self):
-        pass
-
-    @abstractmethod
-    def getAccountType(self):
-        pass
-
-    # ===== Constructor =====
-
-    def __init__(self, accountNumber, name, age, initialBalance):
-
-        # Validate age
-        if age < self.MIN_AGE:
-            raise ValueError(
-                f"Customer must be at least "
-                f"{self.MIN_AGE} years old. "
-                f"Provided: {age}"
-            )
-
-        # Get minimum balance from child class
-        minimumBalance = self.getMinimumBalance()
-
-        # Validate minimum balance
-        if initialBalance < minimumBalance:
-            raise ValueError(
-                f"{self.getAccountType()} account requires "
-                f"minimum balance of ₹{minimumBalance}. "
-                f"Provided: ₹{initialBalance}"
-            )
-
-        # Initialize fields
-        self.accountNumber = accountNumber
-        self.name = name
-        self.age = age
-        self.balance = initialBalance
-        self.status = "Active"
-        self.pin = None
-
-    # ===== Business Methods =====
-
-    def deposit(self, amount):
-
-        self.validateActive()
-
+    def deposit(self, amount: float) -> None:
+        if self._status.lower() != "active":
+            raise InactiveAccountException(f"Cannot deposit to inactive account: {self._account_number}")
         if amount <= 0:
-            raise InvalidAmountException(
-                f"Deposit amount must be positive. "
-                f"Provided: ₹{amount}"
-            )
+            raise InvalidAmountException(f"Deposit amount must be strictly positive: {amount}")
+        self._balance += amount
 
-        self.balance += amount
-
-    def withdraw(self, amount, pin):
-
-        self.validateActive()
-
-        self.validatePin(pin)
-
-        self.validateAmount(amount)
-
-        if amount > self.balance:
-            raise InsufficientBalanceException(
-                f"Insufficient balance. "
-                f"Available: ₹{self.balance}, "
-                f"Requested: ₹{amount}"
-            )
-
-        newBalance = self.balance - amount
-
-        if newBalance < self.getMinimumBalance():
-            raise MinimumBalanceViolationException(
-                f"Cannot withdraw. "
-                f"Minimum balance of ₹{self.getMinimumBalance()} "
-                f"required. "
-                f"Available after withdrawal: ₹{newBalance}"
-            )
-
-        self.balance = newBalance
-
-    # ===== Account Status Management =====
-
-    def closeAccount(self):
-
-        if self.status == "Inactive":
-            raise RuntimeError(
-                "Account is already closed"
-            )
-
-        self.status = "Inactive"
-
-    def reopenAccount(self):
-
-        if self.status == "Active":
-            raise RuntimeError(
-                "Account is already active"
-            )
-
-        self.status = "Active"
-
-    # ===== PIN Management =====
-
-    def setPin(self, pin):
-
-        if pin < self.MIN_PIN or pin > self.MAX_PIN:
-            raise ValueError(
-                "PIN must be a 4-digit number"
-            )
-
-        self.pin = pin
-
-    def verifyPin(self, pin):
-
-        return self.pin == pin
-
-    def hasPin(self):
-
-        return self.pin is not None
-
-    # ===== Helper Methods =====
-
-    def validateActive(self):
-
-        if self.status != "Active":
-            raise InactiveAccountException(
-                "Account is inactive. "
-                "Please reopen the account or contact support."
-            )
-
-    def validatePin(self, pin):
-
-        if self.pin is None:
-            raise InvalidPinException(
-                "PIN not set for this account"
-            )
-
-        if not self.verifyPin(pin):
-            raise InvalidPinException(
-                "Incorrect PIN"
-            )
-
-    def validateAmount(self, amount):
-
+    def withdraw(self, amount: float) -> None:
+        if self._status.lower() != "active":
+            raise InactiveAccountException(f"Cannot withdraw from inactive account: {self._account_number}")
         if amount <= 0:
-            raise InvalidAmountException(
-                f"Amount must be positive. "
-                f"Provided: ₹{amount}"
-            )
+            raise InvalidAmountException(f"Withdrawal amount must be strictly positive: {amount}")
+        if amount > self._balance:
+            raise InsufficientBalanceException(f"Insufficient balance")
+        self._balance -= amount
 
-    def setBalance(self, balance):
+    def display_account_info(self) -> None:
+        # TODO (Step 1): Make this a template method. BankAccount no longer stores _account_type, so replace
+        #   self._account_type below with a call to the abstract hook self.get_account_type().
+        print(f"Account Number: {self._account_number}")
+        print(f"Name: {self._name}")
+        print(f"Age: {self._age}")
+        print(f"Balance: Rs {self._balance}")
+        print(f"Account Type: {self.get_account_type()}")
+        print(f"Status: {self._status}")
 
-        self.balance = balance
-
-    def updateDailyWithdrawalTotal(self, amount):
-
-        pass
-
-    # ===== Getters =====
-
-    def getAccountNumber(self):
-        return self.accountNumber
-
-    def getName(self):
-        return self.name
-
-    def getAge(self):
-        return self.age
-
-    def getBalance(self):
-        return self.balance
-
-    def getStatus(self):
-        return self.status
+    @property
+    def account_number(self) -> str: return self._account_number
+    @property
+    def name(self) -> str: return self._name
+    @property
+    def age(self) -> int: return self._age
+    @property
+    def balance(self) -> float: return self._balance
+    @property
+    def status(self) -> str: return self._status
+    @status.setter
+    def status(self, status: str) -> None: self._status = status
