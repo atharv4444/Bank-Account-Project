@@ -1,12 +1,12 @@
 # gdb/domain/savings_account.py
-from gdb.domain.bank_account import BankAccount
+from gdb.domain.abstract_account import AbstractAccount
 from gdb.exceptions import (
     InactiveAccountException,
     InvalidAmountException,
     MinimumBalanceViolationException
 )
 
-class SavingsAccount(BankAccount):
+class SavingsAccount(AbstractAccount):
     def __init__(self, account_number: str, name: str, age: int, balance: float, status: str = "Active", pin: str = "0000", interest_rate: float = 4.0, minimum_balance: float = 1000.0) -> None:
         super().__init__(account_number, name, age, balance, status, pin)
         self._interest_rate = interest_rate
@@ -24,5 +24,5 @@ class SavingsAccount(BankAccount):
         if amount <= 0:
             raise InvalidAmountException(f"Withdrawal amount must be strictly positive: {amount}")
         if (self._balance - amount) < self._minimum_balance:
-            raise MinimumBalanceViolationException(f"Withdrawal would violate minimum balance requirement of Rs {self._minimum_balance}")
+            raise MinimumBalanceViolationException(f"Withdrawal violates minimum balance requirement of Rs {self._minimum_balance}")
         super().withdraw(amount)
